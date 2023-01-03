@@ -1,0 +1,1 @@
+export const URL_AUTH_SIGNUP = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyCty0PCojgNDGzJ7-3We5_wpvRPfy5d5Cg'
