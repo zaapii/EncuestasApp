@@ -43,7 +43,6 @@ const CreateContact = () => {
     const contactsCollection = collection(db, "contacts");
     addDoc(contactsCollection, contact).then(async ({ id }) => {
       const contactWithId = { ...contact, id: id };
-      console.log(contactWithId);
     });
   };
 

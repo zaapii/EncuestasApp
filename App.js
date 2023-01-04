@@ -14,6 +14,15 @@ import { applyMiddleware, compose, createStore } from 'redux';
 import reducer from './store/index'
 import thunk from 'redux-thunk';
 
+import { init } from './db'
+
+init()
+.then(() => console.log('Database initialized'))
+.catch((err) => {
+  console.log(err.message)
+})
+
+
 // Define the config
 const config = {
   useSystemColorMode: false,

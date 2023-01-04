@@ -15,6 +15,8 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { uuidv4 } from "@firebase/util";
 import * as Location from "expo-location";
 import { useIsFocused } from "@react-navigation/native";
+import { insertAlert } from "../db";
+import * as Network from 'expo-network';
 
 const CreateAlert = ({ selectedContactFromList }) => {
   const styles = StyleSheet.create({
@@ -35,6 +37,8 @@ const CreateAlert = ({ selectedContactFromList }) => {
   const [pickedLocation, setPickedLocation] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedContact, setSelectedContact] = useState(false);
+  const [imageUrl, setImageUrl] = useState ('');
+  const [isOnline, setIsOnline] = useState(false)
 
   async function getContacts() {
     setLoading(true);
@@ -48,8 +52,13 @@ const CreateAlert = ({ selectedContactFromList }) => {
     setContacts(contacts);
   }
 
+  const isConnected = async () => {
+    setIsOnline(await Network.getNetworkStateAsync())
+  }
+
   useEffect(() => {
     if (isFocused) {
+      isConnected();
       verifyPermissionsLocation();
       getContacts();
       handlerGetLocation();
@@ -57,25 +66,26 @@ const CreateAlert = ({ selectedContactFromList }) => {
     }
   }, [isFocused]);
 
-  const handleSendEmail = () => {
-    const emailToSend = {
-      type: "Outbox",
-      fullName: email,
-      emailBody,
-      avatarUrl:
-        "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=500",
-    };
-    const emailsCollection = collection(db, "emails");
-    addDoc(emailsCollection, emailToSend).then(async ({ id }) => {
-      const emailWithId = { ...email, id: id };
-      console.log(emailWithId);
-    });
+  const createAlert = async () => {
+    const alert = {
+      contact: selectedContact.nameSurname,
+      image: imageUrl,
+      lat: pickedLocation.lat,
+      lng: pickedLocation.lng
+    }
+    if (isOnline.isInternetReachable) {
+      const alertsCollection = collection(db, "alerts");
+      addDoc(alertsCollection, alert).then(async ({ id }) => {
+        const alertWithId = { ...alert, id: id };
+      });
+    } else {
+      const result = await insertAlert(selectedContact.nameSurname, imageUrl, pickedLocation.lat, pickedLocation.lng)
+    }
   };
 
   const verifyPermissionsCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      console.log("necesita dar permisos");
       return false;
     }
     return true;
@@ -84,7 +94,6 @@ const CreateAlert = ({ selectedContactFromList }) => {
   const verifyPermissionsLocation = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      console.log("necesita dar permisos");
       return false;
     }
     return true;
@@ -141,7 +150,7 @@ const CreateAlert = ({ selectedContactFromList }) => {
     // 'file' comes from the Blob or File API
     uploadBytes(imageRef, blob).then((snapshot) => {
       getDownloadURL(imageRef).then((url) => {
-        console.log(url);
+        setImageUrl(url)
       });
     });
   };
@@ -273,9 +282,9 @@ const CreateAlert = ({ selectedContactFromList }) => {
           <HStack justifyContent="center">
             <Button onPress={handlerTakeImage}>Tomar Foto</Button>
           </HStack>
-          {selectedContact && pickedUri && pickedLocation && (
+          {selectedContact && imageUrl && pickedLocation && (
             <HStack justifyContent="center">
-              <Button onPress={shareImage}>Enviar Alerta</Button>
+              <Button onPress={createAlert}>Enviar Alerta</Button>
             </HStack>
           )}
         </VStack>

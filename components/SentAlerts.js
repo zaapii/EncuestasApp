@@ -12,45 +12,62 @@ import {
 } from "native-base";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { FlatList } from "react-native";
+import { FlatList, StyleSheet } from "react-native";
 import { db } from "../firebase";
 import { LogBox } from "react-native";
+import { Image } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 
 LogBox.ignoreLogs(["Setting a timer"]);
 
-const SentAlerts = ({navigation}) => {
-  const [emails, setEmails] = useState([]);
+const SentAlerts = ({ navigation }) => {
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const isFocused = useIsFocused();
 
-  async function getEmails() {
+  const styles = StyleSheet.create({
+    image: {
+      width: 100,
+      height: 100,
+      maxWidth: "80%",
+      maxHeight: "100%",
+    },
+  });
+
+  async function getAlerts() {
     setLoading(true);
-    const emailsFetch = [];
-    const q = query(collection(db, "emails"), where("type", "==", "Outbox"));
+    const alertsFetch = [];
+    const q = query(collection(db, "alerts"));
     const querySnapshot = await getDocs(q);
 
     querySnapshot.forEach((doc) => {
-      emailsFetch.push(doc.data());
+      alertsFetch.push(doc.data());
     });
-    setEmails(emailsFetch);
+    setAlerts(alertsFetch);
   }
 
   useEffect(() => {
-    getEmails();
-    setTimeout(() => {
-      setLoading(false);
-    }, 3000);
-  }, []);
+  if (isFocused) {
+    getAlerts();
+    setLoading(false);
+  }
+  }, [isFocused]);
 
   return (
     <>
       {loading ? (
-        <HStack space={8} justifyContent="center" alignItems="center" style={{marginTop: 20}}>
+        <HStack
+          space={8}
+          justifyContent="center"
+          alignItems="center"
+          style={{ marginTop: 20 }}
+        >
           <Spinner size="lg" />
         </HStack>
       ) : (
         <Box style={{ padding: 10 }}>
           <FlatList
-            data={emails}
+            data={alerts}
             renderItem={({ item }) => (
               <Box
                 key={item.id}
@@ -63,14 +80,20 @@ const SentAlerts = ({navigation}) => {
                 pr={["0", "5"]}
                 py="2"
               >
-                <HStack space={[2, 3]} justifyContent="space-between">
-                  {item.avatarUrl && <Avatar
+                <HStack
+                  space={[2, 3]}
+                  justifyContent="space-around"
+                  alignItems="center"
+                >
+                  <Avatar
                     size="48px"
                     source={{
-                      uri: item.avatarUrl,
+                      uri: item.image,
                     }}
-                  />}
-                  <VStack>
+                  >
+                    {item.contact.split(" ")[0][0]}
+                  </Avatar>
+                  <VStack alignItems="center">
                     <Text
                       _dark={{
                         color: "warmGray.50",
@@ -78,34 +101,35 @@ const SentAlerts = ({navigation}) => {
                       color="coolGray.800"
                       bold
                     >
-                      {item.fullName}
-                    </Text>
-                    <Text
-                      color="coolGray.600"
-                      _dark={{
-                        color: "warmGray.200",
-                      }}
-                    >
-                      {item.emailBody}
+                      {item.contact}
                     </Text>
                   </VStack>
-                  <Spacer />
-                  <Text
-                    fontSize="xs"
-                    _dark={{
-                      color: "warmGray.50",
-                    }}
-                    color="coolGray.800"
-                    alignSelf="flex-start"
-                  >
-                    {item.timeStamp?.toString()}
-                  </Text>
+                  <HStack justifyContent="center">
+                    <Image
+                      style={styles.image}
+                      source={{
+                        uri: `https://maps.googleapis.com/maps/api/staticmap?center=${item.lat},${item.lng}&zoom=13&size=600x300&maptype=roadmap
+  &markers=color:blue%7Clabel:ME%7C${item.lat},${item.lng}&key=AIzaSyBERHqrrty86YYMulp6ZDavjepoK6jXOsg`,
+                      }}
+                    ></Image>
+                  </HStack>
                 </HStack>
               </Box>
             )}
             keyExtractor={(item) => item.id}
           />
-        <Fab onPress={() => {}} position="absolute" size="sm" icon={<Icon color="white" as={<MaterialCommunityIcons name="plus" />} size="sm" />}></Fab>
+          <Fab
+            onPress={() => {}}
+            position="absolute"
+            size="sm"
+            icon={
+              <Icon
+                color="white"
+                as={<MaterialCommunityIcons name="plus" />}
+                size="sm"
+              />
+            }
+          ></Fab>
         </Box>
       )}
     </>

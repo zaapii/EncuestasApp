@@ -11,36 +11,80 @@ import {
   Text,
   Spinner,
 } from "native-base";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dimensions, KeyboardAvoidingView, ScrollView } from "react-native";
 import { auth } from "../../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../store/actions/user.action";
+import DisconnectedDialog from "../../components/DisconnectedDialog";
+import * as Network from 'expo-network';
+import { fetchUsersOffline } from "../../db";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isOpen, setIsOpen] = useState(false)
+  const [isOnline, setIsOnline] = useState(false)
+  const [offlineUsers, setOfflineUsers] = useState([])
   const dispatch = useDispatch();
+
+  const isConnected = async () => {
+    const result = await Network.getNetworkStateAsync()
+    setIsOnline(result.isInternetReachable)
+    setIsOpen(!result.isInternetReachable)
+    if (!result.isInternetReachable) {
+      fetchUsersOffline()
+        .then(async (result) => {
+          if(!result.rows.length) {
+            await insertDefaultUser()
+          } else {
+            setOfflineUsers(result.rows._array[0])
+          }
+        })
+        .catch((err) => {
+          console.log('database fail')
+          console.log(err.message)
+        })
+    }
+  }
+
+  useEffect(() => {
+    isConnected()
+  }, [])
+
+  const onClose = async () => {
+    setIsOpen(false)
+  }
+
+  const checkOfflineLogin = () => {
+    return email === offlineUsers.email && password === offlineUsers.password
+  }
 
   const handleLogin = () => {
     setLoading(true);
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        setLoading(false);
-        dispatch(setUser(userCredential.user.email));
-      })
-      .catch((error) => {
-        setLoading(false);
-        setError(error.message);
-      });
+    if (isOnline) {
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          setLoading(false);
+          dispatch(setUser(userCredential.user.email));
+        })
+        .catch((error) => {
+          setLoading(false);
+          setError(error.message);
+        });
+    } else {
+      setLoading(false);
+      if(checkOfflineLogin()) dispatch(setUser(email));
+    }
   };
 
   return (
     <KeyboardAvoidingView behaviour="padding" keyboardVerticalOffset={200}>
       <ScrollView>
+        <DisconnectedDialog isOpen={isOpen} onClose={onClose} />
         <Center w="100%">
           <Box safeArea p="2" py="8" w="90%" maxW="290">
             <Heading
