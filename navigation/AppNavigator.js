@@ -101,7 +101,7 @@ const CustomDrawer = (props) => {
               </Pressable>
             ))}
           </VStack>
-          <Button onPress={logout}>Logout</Button>
+          <Button color="red.500" onPress={logout}>Logout</Button>
         </VStack>
       </VStack>
     </DrawerContentScrollView>

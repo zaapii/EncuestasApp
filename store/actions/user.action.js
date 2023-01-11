@@ -18,7 +18,6 @@ export const signUp = (email, password) => {
           }),
         })
         const data = await response.json()
-        console.log(data)
         dispatch({
           type: SIGNUP
         })

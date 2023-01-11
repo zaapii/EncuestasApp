@@ -1,4 +1,4 @@
-import { Box, HStack, Icon, Text, VStack, Button, Avatar } from "native-base";
+import { Box, HStack, Icon, Text, VStack, Button, Avatar, useToast } from "native-base";
 import {
   FlatList,
   Image,
@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addDoc, collection, getDocs, query } from "firebase/firestore";
 import { db, storage } from "../firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -18,7 +18,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { insertAlert } from "../db";
 import * as Network from 'expo-network';
 
-const CreateAlert = ({ selectedContactFromList }) => {
+const CreateAlert = (props) => {
   const styles = StyleSheet.create({
     image: {
       width: 250,
@@ -28,9 +28,6 @@ const CreateAlert = ({ selectedContactFromList }) => {
     },
   });
 
-  if (selectedContactFromList) {
-    setSelectedContact(selectedContactFromList);
-  }
   const isFocused = useIsFocused();
   const [contacts, setContacts] = useState([]);
   const [pickedUri, setPickedUri] = useState(null);
@@ -39,6 +36,17 @@ const CreateAlert = ({ selectedContactFromList }) => {
   const [selectedContact, setSelectedContact] = useState(false);
   const [imageUrl, setImageUrl] = useState ('');
   const [isOnline, setIsOnline] = useState(false)
+
+  const toast = useToast();
+  const toastIdRef = useRef();
+
+  const addToast = () => {
+    toastIdRef.current = toast.show({
+      title: "Alert added correctly!",
+      variant: "top-accent",
+      description: "Redirecting to sent alerts...",
+    },);
+  }
 
   async function getContacts() {
     setLoading(true);
@@ -56,8 +64,15 @@ const CreateAlert = ({ selectedContactFromList }) => {
     setIsOnline(await Network.getNetworkStateAsync())
   }
 
+  const hasSelectedContact = () => {
+    if(props.route.params && props.route.params.contact) {
+      setSelectedContact(props.route.params.contact)
+    }
+  }
+
   useEffect(() => {
     if (isFocused) {
+      hasSelectedContact();
       isConnected();
       verifyPermissionsLocation();
       getContacts();
@@ -74,12 +89,21 @@ const CreateAlert = ({ selectedContactFromList }) => {
       lng: pickedLocation.lng
     }
     if (isOnline.isInternetReachable) {
+      console.log('online and sending')
       const alertsCollection = collection(db, "alerts");
       addDoc(alertsCollection, alert).then(async ({ id }) => {
         const alertWithId = { ...alert, id: id };
+        console.log('doc added')
+        setPickedLocation({})
+        setImageUrl("")
+        setSelectedContact(null)
+        setImageUrl("")
+        addToast()
+        props.navigation.navigate('SentAlerts')
       });
     } else {
       const result = await insertAlert(selectedContact.nameSurname, imageUrl, pickedLocation.lat, pickedLocation.lng)
+      console.log('added to database cause its offline', result)
     }
   };
 
@@ -128,8 +152,6 @@ const CreateAlert = ({ selectedContactFromList }) => {
       lat: location.coords.latitude,
       lng: location.coords.longitude,
     });
-
-    console.log(pickedLocation.lat, pickedLocation.lng);
   };
 
   const uploadImage = async (image) => {
@@ -150,6 +172,7 @@ const CreateAlert = ({ selectedContactFromList }) => {
     // 'file' comes from the Blob or File API
     uploadBytes(imageRef, blob).then((snapshot) => {
       getDownloadURL(imageRef).then((url) => {
+        console.log(url)
         setImageUrl(url)
       });
     });
@@ -282,9 +305,9 @@ const CreateAlert = ({ selectedContactFromList }) => {
           <HStack justifyContent="center">
             <Button onPress={handlerTakeImage}>Tomar Foto</Button>
           </HStack>
-          {selectedContact && imageUrl && pickedLocation && (
-            <HStack justifyContent="center">
-              <Button onPress={createAlert}>Enviar Alerta</Button>
+          {(
+            <HStack justifyContent="center" style={{marginBottom: 10}}>
+              <Button color="green.500" onPress={createAlert}>Enviar Alerta</Button>
             </HStack>
           )}
         </VStack>

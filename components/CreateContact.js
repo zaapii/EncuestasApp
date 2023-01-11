@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as ImagePicker from "expo-image-picker";
 import {
   Avatar,
@@ -10,17 +10,28 @@ import {
   Text,
   VStack,
   Button,
+  useToast,
 } from "native-base";
-import { ScrollView, RefreshControl } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "../firebase";
 
-const CreateContact = () => {
+const CreateContact = ({navigation}) => {
   const [image, setImage] = useState(null);
   const [name, setName] = useState("");
   const [favourite, setFavourite] = useState(false);
   const [initials, setInitials] = useState("");
+  
+  const toast = useToast();
+  const toastIdRef = useRef();
+
+  const addToast = () => {
+    toastIdRef.current = toast.show({
+      title: "Contact created correctly!",
+      variant: "top-accent",
+      description: "Redirecting to contacts...",
+    },);
+  }
 
   const handleNameInput = (e) => {
     setName(e);
@@ -42,6 +53,12 @@ const CreateContact = () => {
     };
     const contactsCollection = collection(db, "contacts");
     addDoc(contactsCollection, contact).then(async ({ id }) => {
+      addToast()
+      setImage(null)
+      setName("")
+      setFavourite(false)
+      setInitials("")
+      navigation.navigate('Contacts')
       const contactWithId = { ...contact, id: id };
     });
   };

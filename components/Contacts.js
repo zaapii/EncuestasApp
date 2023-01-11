@@ -15,9 +15,10 @@ import {
   VStack,
   Pressable,
   ScrollView,
+  AlertDialog,
 } from "native-base";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "../firebase";
 import { LogBox } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
@@ -33,7 +34,13 @@ const Contacts = ({ navigation }) => {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const isFocused = useIsFocused()
+  const isFocused = useIsFocused();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState({})
+
+  const onCloseDialog = () => setDialogOpen(false);
+
+  const cancelRef = useRef(null);
 
   const onRefresh = async () => {
     setLoading(true);
@@ -41,6 +48,18 @@ const Contacts = ({ navigation }) => {
     setLoading(false);
   };
 
+  const createNewAlert = () => {
+    setDialogOpen(false);
+    navigation.navigate(
+      'CreateAlert',
+      { contact: selectedContact },
+    );
+  }
+
+  const showAlert = (item) => {
+    setSelectedContact(item)
+    setDialogOpen(true);
+  };
 
   async function getContacts() {
     setLoading(true);
@@ -121,11 +140,36 @@ const Contacts = ({ navigation }) => {
               </Actionsheet>
             </Center>
             <Box style={{ padding: 10 }}>
+              <AlertDialog
+                leastDestructiveRef={cancelRef}
+                isOpen={dialogOpen}
+                onClose={onCloseDialog}
+              >
+                <AlertDialog.Content>
+                  <AlertDialog.CloseButton />
+                  <AlertDialog.Header>Create Alert</AlertDialog.Header>
+                  <AlertDialog.Body>
+                    <HStack width="100%"><Text>Create alert for {selectedContact.nameSurname}?</Text></HStack>
+                  </AlertDialog.Body>
+                  <AlertDialog.Footer>
+                    <Button.Group space={2}>
+                      <Button
+                        variant="unstyled"
+                        colorScheme="coolGray"
+                        onPress={onCloseDialog}
+                        ref={cancelRef}
+                      >
+                        Cancel
+                      </Button>
+                      <Button colorScheme="danger" onPress={() => createNewAlert()}>
+                        Create
+                      </Button>
+                    </Button.Group>
+                  </AlertDialog.Footer>
+                </AlertDialog.Content>
+              </AlertDialog>
               {contacts.map((item, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => console.log("I'm Pressed")}
-                >
+                <Pressable key={index} onPress={() => showAlert(item)}>
                   <Box
                     borderBottomWidth="1"
                     _dark={{
