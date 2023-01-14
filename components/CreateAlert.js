@@ -237,16 +237,19 @@ const CreateAlert = (props) => {
               />
             </HStack>
           ) : (
+            
             <HStack
               justifyContent="center"
               alignItems="center"
               style={{ marginTop: 10 }}
             >
+              <Text>Creating alert for:</Text>
               <Box
                 rounded="lg"
                 borderColor="blue.500"
                 borderWidth="1"
                 padding="5"
+                style={{marginTop: 10}}
               >
                 <HStack
                   space={3}
