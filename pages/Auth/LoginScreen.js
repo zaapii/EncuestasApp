@@ -10,8 +10,9 @@ import {
   VStack,
   Text,
   Spinner,
+  useToast,
 } from "native-base";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dimensions, KeyboardAvoidingView, ScrollView } from "react-native";
 import { auth } from "../../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -30,6 +31,21 @@ const LoginScreen = ({ navigation }) => {
   const [isOnline, setIsOnline] = useState(false)
   const [offlineUsers, setOfflineUsers] = useState([])
   const dispatch = useDispatch();
+
+  const toast = useToast();
+  const toastIdRef = useRef();
+
+  const addToast = () => {
+    toastIdRef.current = toast.show({
+      render: () => {
+        return (
+          <Box bg="emerald.500" px="2" py="1" rounded="sm" mb={5}>
+            <Text style={{color: 'white', fontWeight: 'bold'}}>Welcome!</Text>
+          </Box>
+        )
+      }
+    })
+  }
 
   const isConnected = async () => {
     const result = await Network.getNetworkStateAsync()
@@ -69,7 +85,8 @@ const LoginScreen = ({ navigation }) => {
       signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
           setLoading(false);
-          dispatch(setUser(userCredential.user.email));
+          dispatch(setUser(userCredential.user.email))
+          addToast(userCredential.user.email)
         })
         .catch((error) => {
           setLoading(false);

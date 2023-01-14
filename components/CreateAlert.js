@@ -1,4 +1,13 @@
-import { Box, HStack, Icon, Text, VStack, Button, Avatar, useToast } from "native-base";
+import {
+  Box,
+  HStack,
+  Icon,
+  Text,
+  VStack,
+  Button,
+  Avatar,
+  useToast,
+} from "native-base";
 import {
   FlatList,
   Image,
@@ -16,7 +25,7 @@ import { uuidv4 } from "@firebase/util";
 import * as Location from "expo-location";
 import { useIsFocused } from "@react-navigation/native";
 import { insertAlert } from "../db";
-import * as Network from 'expo-network';
+import * as Network from "expo-network";
 
 const CreateAlert = (props) => {
   const styles = StyleSheet.create({
@@ -34,19 +43,23 @@ const CreateAlert = (props) => {
   const [pickedLocation, setPickedLocation] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedContact, setSelectedContact] = useState(false);
-  const [imageUrl, setImageUrl] = useState ('');
-  const [isOnline, setIsOnline] = useState(false)
+  const [imageUrl, setImageUrl] = useState("");
+  const [isOnline, setIsOnline] = useState(false);
 
   const toast = useToast();
   const toastIdRef = useRef();
 
   const addToast = () => {
     toastIdRef.current = toast.show({
-      title: "Alert added correctly!",
-      variant: "top-accent",
-      description: "Redirecting to sent alerts...",
-    },);
-  }
+      render: () => {
+        return (
+          <Box bg="emerald.500" px="2" py="1" rounded="sm" color="white" mb={5}>
+            Alert created correctly!
+          </Box>
+        );
+      }
+    });
+  };
 
   async function getContacts() {
     setLoading(true);
@@ -61,14 +74,14 @@ const CreateAlert = (props) => {
   }
 
   const isConnected = async () => {
-    setIsOnline(await Network.getNetworkStateAsync())
-  }
+    setIsOnline(await Network.getNetworkStateAsync());
+  };
 
   const hasSelectedContact = () => {
-    if(props.route.params && props.route.params.contact) {
-      setSelectedContact(props.route.params.contact)
+    if (props.route.params && props.route.params.contact) {
+      setSelectedContact(props.route.params.contact);
     }
-  }
+  };
 
   useEffect(() => {
     if (isFocused) {
@@ -86,24 +99,29 @@ const CreateAlert = (props) => {
       contact: selectedContact.nameSurname,
       image: imageUrl,
       lat: pickedLocation.lat,
-      lng: pickedLocation.lng
-    }
+      lng: pickedLocation.lng,
+    };
     if (isOnline.isInternetReachable) {
-      console.log('online and sending')
+      console.log("online and sending");
       const alertsCollection = collection(db, "alerts");
       addDoc(alertsCollection, alert).then(async ({ id }) => {
         const alertWithId = { ...alert, id: id };
-        console.log('doc added')
-        setPickedLocation({})
-        setImageUrl("")
-        setSelectedContact(null)
-        setImageUrl("")
-        addToast()
-        props.navigation.navigate('SentAlerts')
+        console.log("doc added");
+        setPickedLocation({});
+        setImageUrl("");
+        setSelectedContact(null);
+        setImageUrl("");
+        addToast();
+        props.navigation.navigate("SentAlerts");
       });
     } else {
-      const result = await insertAlert(selectedContact.nameSurname, imageUrl, pickedLocation.lat, pickedLocation.lng)
-      console.log('added to database cause its offline', result)
+      const result = await insertAlert(
+        selectedContact.nameSurname,
+        imageUrl,
+        pickedLocation.lat,
+        pickedLocation.lng
+      );
+      console.log("added to database cause its offline", result);
     }
   };
 
@@ -172,8 +190,8 @@ const CreateAlert = (props) => {
     // 'file' comes from the Blob or File API
     uploadBytes(imageRef, blob).then((snapshot) => {
       getDownloadURL(imageRef).then((url) => {
-        console.log(url)
-        setImageUrl(url)
+        console.log(url);
+        setImageUrl(url);
       });
     });
   };
@@ -237,7 +255,6 @@ const CreateAlert = (props) => {
               />
             </HStack>
           ) : (
-            
             <HStack
               justifyContent="center"
               alignItems="center"
@@ -249,7 +266,7 @@ const CreateAlert = (props) => {
                 borderColor="blue.500"
                 borderWidth="1"
                 padding="5"
-                style={{marginTop: 10}}
+                style={{ marginTop: 10 }}
               >
                 <HStack
                   space={3}
@@ -308,11 +325,13 @@ const CreateAlert = (props) => {
           <HStack justifyContent="center">
             <Button onPress={handlerTakeImage}>Tomar Foto</Button>
           </HStack>
-          {(
-            <HStack justifyContent="center" style={{marginBottom: 10}}>
-              <Button color="green.500" onPress={createAlert}>Enviar Alerta</Button>
+          {
+            <HStack justifyContent="center" style={{ marginBottom: 10 }}>
+              <Button color="green.500" onPress={createAlert}>
+                Enviar Alerta
+              </Button>
             </HStack>
-          )}
+          }
         </VStack>
       </ScrollView>
     </Box>

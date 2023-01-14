@@ -92,7 +92,7 @@ const Contacts = ({ navigation }) => {
             space={8}
             justifyContent="center"
             alignItems="center"
-            style={{ marginTop: 20 }}
+            style={{ marginTop: 40 }}
           >
             <Spinner size="lg" />
           </HStack>

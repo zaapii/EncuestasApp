@@ -11,36 +11,43 @@ import {
   VStack,
   Button,
   useToast,
+  Box,
 } from "native-base";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "../firebase";
 
-const CreateContact = ({navigation}) => {
+const CreateContact = ({ navigation }) => {
   const [image, setImage] = useState(null);
   const [name, setName] = useState("");
   const [favourite, setFavourite] = useState(false);
   const [initials, setInitials] = useState("");
-  
+
   const toast = useToast();
   const toastIdRef = useRef();
 
   const addToast = () => {
     toastIdRef.current = toast.show({
-      title: "Contact created correctly!",
-      variant: "top-accent",
-      description: "Redirecting to contacts...",
-    },);
-  }
+      render: () => {
+        return (
+          <Box bg="emerald.500" px="2" py="1" rounded="sm" color="white" mb={5}>
+            Contact created correctly!
+          </Box>
+        );
+      },
+    });
+  };
 
   const handleNameInput = (e) => {
     setName(e);
     if (e.includes(" ")) {
       const initial1 = e.split(" ")[0][0];
       const initial2 = e.split(" ")[1][0];
-      initial1 && initial2 && setInitials(initial1.toUpperCase() + initial2.toUpperCase());
+      initial1 &&
+        initial2 &&
+        setInitials(initial1.toUpperCase() + initial2.toUpperCase());
     } else {
-      setInitials(name.substring(0,2))
+      setInitials(name.substring(0, 2));
     }
   };
 
@@ -49,16 +56,16 @@ const CreateContact = ({navigation}) => {
       nameSurname: name,
       avatarUri: image,
       favourite,
-      initials
+      initials,
     };
     const contactsCollection = collection(db, "contacts");
     addDoc(contactsCollection, contact).then(async ({ id }) => {
-      addToast()
-      setImage(null)
-      setName("")
-      setFavourite(false)
-      setInitials("")
-      navigation.navigate('Contacts')
+      addToast();
+      setImage(null);
+      setName("");
+      setFavourite(false);
+      setInitials("");
+      navigation.navigate("Contacts");
       const contactWithId = { ...contact, id: id };
     });
   };
