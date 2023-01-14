@@ -4,7 +4,6 @@
     "slug": "ReactNativev2",
     "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
